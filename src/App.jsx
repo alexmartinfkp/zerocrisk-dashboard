@@ -11,7 +11,7 @@ import {
   PieChart,
   Search,
   RefreshCw,
-  AlertCircle
+  Users // Added for Client icon
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -39,8 +39,19 @@ const INITIAL_REGULATIONS_DATA = [
   { id: 102, type: 'REGULATION', name: 'Consumer Protection Code', code: '2020_CPC', policy: 100, evidence: 93 },
 ];
 
+// --- CLIENT DATA (Static) ---
+const CLIENTS_DATA = [
+  { id: 1, type: 'CLIENT', name: 'Donal Milmo-Penny', kyc: 100, terms: 100, aml: 100, suitability: 100, policy: 100, annual: 100 },
+  { id: 2, type: 'CLIENT', name: 'Garfield Spollen', kyc: 100, terms: 100, aml: 100, suitability: 100, policy: 100, annual: 100 },
+  { id: 3, type: 'CLIENT', name: 'Norah McNulty', kyc: 100, terms: 100, aml: 100, suitability: 100, policy: 100, annual: 100 },
+  { id: 4, type: 'CLIENT', name: 'Paul Looby', kyc: 100, terms: 100, aml: 100, suitability: 100, policy: 100, annual: 100 },
+  { id: 5, type: 'CLIENT', name: 'Stephen Morgan', kyc: 100, terms: 100, aml: 100, suitability: 100, policy: 100, annual: 100 },
+  { id: 6, type: 'CLIENT', name: 'John English', kyc: 100, terms: 100, aml: 100, suitability: 100, policy: 100, annual: 100 },
+];
+
 // --- UTILITIES ---
 const getRAGStatus = (percentage) => {
+  // RAG Logic: > 70 Green, 50-70 Orange, < 50 Red
   if (percentage > 70) return { color: 'bg-emerald-600', text: 'text-emerald-800', bg: 'bg-emerald-50', border: 'border-emerald-200', label: 'Compliant' };
   if (percentage >= 50) return { color: 'bg-orange-500', text: 'text-orange-800', bg: 'bg-orange-50', border: 'border-orange-200', label: 'At Risk' };
   return { color: 'bg-red-600', text: 'text-red-800', bg: 'bg-red-50', border: 'border-red-200', label: 'Critical' };
@@ -75,17 +86,17 @@ const parseCSV = (text) => {
   });
 };
 
-const ProgressBar = ({ value }) => {
+const ProgressBar = ({ value, showLabel = true }) => {
   const status = getRAGStatus(value);
   return (
     <div className="w-full flex items-center gap-2">
-      <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
         <div 
           className={`h-full rounded-full ${status.color} transition-all duration-500`}
           style={{ width: `${value}%` }}
         />
       </div>
-      <span className={`text-xs font-semibold w-9 text-right ${status.text}`}>{value}%</span>
+      {showLabel && <span className={`text-[10px] font-bold w-7 text-right ${status.text}`}>{value}%</span>}
     </div>
   );
 };
@@ -124,7 +135,7 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend }) => (
 
 // --- DASHBOARD COMPONENTS ---
 
-const DashboardTable = ({ title, data, type }) => {
+const DashboardTable = ({ title, data }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredData = data.filter(item => 
@@ -137,10 +148,10 @@ const DashboardTable = ({ title, data, type }) => {
       <div className="p-6 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h2 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
-            {type === 'OPERATIONS' ? <Settings className="w-5 h-5 text-neutral-600" /> : <ShieldCheck className="w-5 h-5 text-red-600" />}
+            {data[0]?.type === 'OPERATIONS' ? <Settings className="w-5 h-5 text-neutral-600" /> : <ShieldCheck className="w-5 h-5 text-red-600" />}
             {title}
           </h2>
-          <p className="text-sm text-neutral-500 mt-1">Monitoring compliance status across key {type.toLowerCase().slice(0, -1)} areas.</p>
+          <p className="text-sm text-neutral-500 mt-1">Monitoring compliance status across key areas.</p>
         </div>
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
@@ -196,6 +207,94 @@ const DashboardTable = ({ title, data, type }) => {
   );
 };
 
+const ClientDashboardTable = ({ data }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredData = data.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Helper for small column headers
+  const Th = ({ children }) => (
+    <th className="p-3 font-semibold border-b border-neutral-200 w-32 text-center align-bottom">
+      {children}
+    </th>
+  );
+
+  // Helper for cells
+  const Td = ({ value }) => {
+    // Get correct RAG colors: <50 Red, 50-70 Orange, >70 Green
+    const status = getRAGStatus(value);
+    
+    return (
+      <td className="p-3 border-b border-neutral-100">
+        <div className="flex flex-col items-center">
+          <span className={`text-xs font-bold mb-1 ${status.text}`}>{value}%</span>
+          <div className="w-full h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+             <div className={`h-full rounded-full ${status.color} transition-all duration-500`} style={{ width: `${value}%` }} />
+          </div>
+        </div>
+      </td>
+    );
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+      <div className="p-6 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
+            <Users className="w-5 h-5 text-red-600" />
+            Client Monitoring Dashboard
+          </h2>
+          <p className="text-sm text-neutral-500 mt-1">Real-time status of client documentation and compliance.</p>
+        </div>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
+          <input 
+            type="text" 
+            placeholder="Search broker name..." 
+            className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+      
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[800px]">
+          <thead>
+            <tr className="bg-neutral-50 text-neutral-600 text-[10px] uppercase tracking-wider leading-tight">
+              <th className="p-4 font-semibold border-b border-neutral-200 w-48 text-left">Broker Name</th>
+              <Th>KYC Fact Find</Th>
+              <Th>Terms of Business</Th>
+              <Th>AML ID</Th>
+              <Th>Suitability Statement</Th>
+              <Th>Signed Policy</Th>
+              <Th>Annual Benefits</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-neutral-100">
+            {filteredData.map((row) => (
+              <tr key={row.id} className="hover:bg-neutral-50 transition-colors">
+                <td className="p-4">
+                  <div className="font-medium text-neutral-900 text-sm">{row.name}</div>
+                  <div className="text-[10px] text-neutral-400 uppercase font-mono">ID: {row.id}</div>
+                </td>
+                <Td value={row.kyc} />
+                <Td value={row.terms} />
+                <Td value={row.aml} />
+                <Td value={row.suitability} />
+                <Td value={row.policy} />
+                <Td value={row.annual} />
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 const SummaryDashboard = ({ opsData, regData }) => {
   const allData = [...opsData, ...regData];
   const totalItems = allData.length;
@@ -244,7 +343,6 @@ const SummaryDashboard = ({ opsData, regData }) => {
                 <Tooltip cursor={{ fill: '#f5f5f5' }} />
                 <Legend />
                 <Bar dataKey="policy" name="Policy Readiness" fill="#dc2626" radius={[4, 4, 0, 0]} barSize={50} />
-                {/* Changed fill color to a lighter grey for visibility against dark sidebar if needed, but keeping standard grey for consistency */}
                 <Bar dataKey="evidence" name="Evidence Gathering" fill="#6b7280" radius={[4, 4, 0, 0]} barSize={50} />
               </BarChart>
             </ResponsiveContainer>
@@ -287,6 +385,7 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [opsData, setOpsData] = useState(INITIAL_OPERATIONS_DATA);
   const [regData, setRegData] = useState(INITIAL_REGULATIONS_DATA);
+  const [clientData] = useState(CLIENTS_DATA); // New static client data
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState('Pre-loaded Snapshot');
   const [errorMsg, setErrorMsg] = useState(null);
@@ -363,6 +462,7 @@ export default function App() {
       case 'summary': return <SummaryDashboard opsData={opsData} regData={regData} />;
       case 'operations': return <DashboardTable title="Operational Controls Framework" data={opsData} type="OPERATIONS" />;
       case 'regulations': return <DashboardTable title="Regulatory Compliance Framework" data={regData} type="REGULATION" />;
+      case 'clients': return <ClientDashboardTable data={clientData} />;
       default: return <SummaryDashboard opsData={opsData} regData={regData} />;
     }
   };
@@ -371,6 +471,7 @@ export default function App() {
     { id: 'summary', label: 'Executive Summary', icon: PieChart },
     { id: 'operations', label: 'Operational Controls', icon: Settings },
     { id: 'regulations', label: 'Regulatory Framework', icon: FileText },
+    { id: 'clients', label: 'Client Monitoring', icon: Users }, // New Tab
   ];
 
   return (
@@ -380,7 +481,7 @@ export default function App() {
         <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />
       )}
 
-      {/* Sidebar - NOW GREY (bg-neutral-800) instead of Black */}
+      {/* Sidebar - GREY (bg-neutral-800) */}
       <aside className={`fixed md:static inset-y-0 left-0 z-50 w-48 bg-neutral-800 text-white transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="p-4 border-b border-neutral-700">
           <div className="flex items-center gap-2">
