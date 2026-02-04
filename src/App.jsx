@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, 
   ShieldCheck, 
@@ -11,7 +11,12 @@ import {
   PieChart,
   Search,
   RefreshCw,
-  Users // Added for Client icon
+  Users,
+  Eye,
+  PlusCircle,
+  CheckSquare,
+  List,
+  Filter
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -39,7 +44,6 @@ const INITIAL_REGULATIONS_DATA = [
   { id: 102, type: 'REGULATION', name: 'Consumer Protection Code', code: '2020_CPC', policy: 100, evidence: 93 },
 ];
 
-// --- CLIENT DATA (Static) ---
 const CLIENTS_DATA = [
   { id: 1, type: 'CLIENT', name: 'Donal Milmo-Penny', kyc: 100, terms: 100, aml: 100, suitability: 100, policy: 100, annual: 100 },
   { id: 2, type: 'CLIENT', name: 'Garfield Spollen', kyc: 100, terms: 100, aml: 100, suitability: 100, policy: 100, annual: 100 },
@@ -49,9 +53,99 @@ const CLIENTS_DATA = [
   { id: 6, type: 'CLIENT', name: 'John English', kyc: 100, terms: 100, aml: 100, suitability: 100, policy: 100, annual: 100 },
 ];
 
+// --- OPS DETAIL DATA ---
+const OPS_DETAIL_DATA = [
+  // Pensions and Investments
+  { code: 'PEN_LASS_1_1', func: 'Pensions and Investments', name: '01. MEETING_ Book Initial Meeting', desc: 'The initial contact meeting is booked in firm Calendar.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'INITIAL MEETING BOOKING TEMPLATE (WITH CLIENT WAIVER)', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_1_2', func: 'Pensions and Investments', name: '01. MEETING_ Initial Meeting', desc: 'The Broker conducts meeting with the Potential client.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'INITIAL MEETING MINUTES - ADDRESSING INFORMATION REQUIREMENTS', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_2_3', func: 'Pensions and Investments', name: '02. INFO EXCHANGE_ Obtain Key Customer Info', desc: 'The Broker requests the key information documents from the client.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'FACTFILE FORM TEMPLATE/ATTITUDE TO RISK QUESTIONAIRE', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_2_4', func: 'Pensions and Investments', name: '02. INFO EXCHANGE_ Send Terms of Business', desc: 'Broker sends Terms of Business detailing products and commissions.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'TERMS OF BUSINESS (PRODUCT LIST & COSTS) (ESIGNATURE)', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_3_5', func: 'Pensions and Investments', name: '03. AML CHECKS_ Obtain AML Data', desc: 'Broker requests AML info (PPS, Photo ID, Bank Proof).', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: '(BANK ACCOUNT PROOF, PPS, ID, SOURCE OF FUNDS)', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_3_6', func: 'Pensions and Investments', name: '03. AML CHECKS_ Perform AML Checks', desc: 'Broker reviews PEP self assessment and checks Sanctions lists.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'AML CHECKLIST AND PEP VALIDATION', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_4_7', func: 'Pensions and Investments', name: '04. PLAN_ Market Analysis', desc: 'Broker Reviews available Products to meet Investment Objectives.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'LIST OF ALL FUNDS AVAILABLE ACROSS PRODUCERS', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_4_8', func: 'Pensions and Investments', name: '04. PLAN_ Create Initial Investment Plan', desc: 'Broker creates initial plan summarizing objectives and products.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'INVESTMENT PLAN', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_4_9', func: 'Pensions and Investments', name: '04. PLAN_ Perform Consumer Suitability', desc: 'Broker completes Suitability Statement detailing chosen products.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'CUSTOMER SUITABILITY STATEMENT', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_4_10', func: 'Pensions and Investments', name: '04. PLAN_ Invesmtent Planning Interaction', desc: 'Interaction to finalise product and funds (emails/calls).', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'LOG OF INTERACTION (MAILS, CALLS)', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_4_11', func: 'Pensions and Investments', name: '04. PLAN_ Final Investment Plan', desc: 'Final Investment plan sent to client for agreement.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'CLIENT INVESTMENT PLAN & EXAMPLE POLICY', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_4_12', func: 'Pensions and Investments', name: '04. PLAN_ Agreement to proceed', desc: 'Client signs investment plan agreement.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'SIGNED CUSTOMER SUITABILITY AND INVESTMENT PLAN', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_5_13', func: 'Pensions and Investments', name: '05. POLICY_ Proposal Forms Signed', desc: 'Complete application form and submit to producer.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'COMPLETED APPLICATION FORM (E.G. AVIVA)', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_5_14', func: 'Pensions and Investments', name: '05. POLICY_ Policy Issued', desc: 'Producer issues Policy document, Client signs and returns.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'PRODUCER PRODUCER POLICY APPROVED', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_6_15', func: 'Pensions and Investments', name: '06. INVESTMENT_ Account Seeding', desc: 'Client seeds funds into Producer account.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'PRODUCT PRODUCER OUTSTANDING REQUIREMENTS DOCUMENT', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_6_16', func: 'Pensions and Investments', name: '06. INVESTMENT_ Producer Investment', desc: 'Instruction to chase client if seeding delayed.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'PRODUCT PRODUCER INVESTMENT REPORT', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_6_17', func: 'Pensions and Investments', name: '06. INVESTMENT_ Broker Check', desc: 'Broker checks investment reconciliation within 5 days.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'APPROVED PRODUCT PRODUCER INVESTMENT REPORT', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_7_18', func: 'Pensions and Investments', name: '07. REPORTING_ Client Position', desc: 'Year-end statement of client policies and financial position.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'PRODUCT/PORTFOLIO VALUATION', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_7_19', func: 'Pensions and Investments', name: '07. REPORTING_ Statements', desc: 'Annual statement from product producers added to file.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'ANNUAL BENEFITS STATEMENT', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_7_20', func: 'Pensions and Investments', name: '07. REPORTING_ Investment Review', desc: 'Annual reminder to review client circumstances.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'REVIEW CLIENT CIRCUMSTANCES/PRODUCT REVIEW', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_8_21', func: 'Pensions and Investments', name: '08. EVENTS_ Claims/Redemptions', desc: 'Liquidating investments or investing further funds.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'SUBSCRIPTION/REDEMPTION REQUEST FORM', evidenceStatus: 'PASSED' },
+  { code: 'PEN_LASS_9_22', func: 'Pensions and Investments', name: '09. RECORDS_ Documentation Maintenance', desc: 'Track presence of all appropriate documents.', obj: 'Client', policyDoc: 'POLICY AND PROCEDURE DOCUMENT PACK', policyStatus: 'PASSED', evidenceDoc: 'CUSTOMER LIFECYCLE DOCUMENT REPORT', evidenceStatus: 'PASSED' },
+
+  // Compliance
+  { code: 'COMP_01', func: 'Compliance', name: 'Ops Controls Framework', desc: 'Process all the Operational Risk of the Firm.', obj: 'Operational Processes', policyDoc: 'Ops Controls Framework Policies', policyStatus: 'PASSED', evidenceDoc: 'OPERATIONAL CONTROLS FRAMEWORK', evidenceStatus: 'PASSED' },
+  { code: 'COMP_02', func: 'Compliance', name: 'Reg Compliance Framework', desc: 'Evidence that the firm complies with all Regulations.', obj: 'Regulatory Rules', policyDoc: 'Reg Compliance Framework Policies', policyStatus: 'PASSED', evidenceDoc: 'COMPLIANCE FRAMEWORK DOCUMENT', evidenceStatus: 'PASSED' },
+  { code: 'COMP_03', func: 'Compliance', name: 'Compliance Monitoring', desc: 'Validate that all documentation has been reviewed.', obj: 'Operational Processes', policyDoc: 'Compliance Monitoring Policies', policyStatus: 'PASSED', evidenceDoc: 'VALIDATION SCHEDULE', evidenceStatus: 'PASSED' },
+  { code: 'COMP_04', func: 'Compliance', name: 'Compliance Testing', desc: 'Test that documentation is fit for purpose.', obj: 'Operational Processes', policyDoc: 'Compliance Testing Policies', policyStatus: 'PASSED', evidenceDoc: 'TESTING SCHEDULE', evidenceStatus: 'PASSED' },
+  { code: 'COMP_05', func: 'Compliance', name: 'Document Template', desc: 'Maintain list of all Operational Processes evidence docs.', obj: 'Evidence Docs', policyDoc: 'Document Template Policies', policyStatus: 'PASSED', evidenceDoc: 'DOCUMENTATION MANAGEMENT REPORT', evidenceStatus: 'PASSED' },
+  { code: 'COMP_06', func: 'Compliance', name: 'Horizon Scanning', desc: 'Review applicable future regulation.', obj: 'Regulations', policyDoc: 'Horizon Scanning Policies', policyStatus: 'PASSED', evidenceDoc: 'COMPLIANCE FRAMEWORK DOCUMENT', evidenceStatus: 'PASSED' },
+  { code: 'COMP_07', func: 'Compliance', name: 'New Regulation Mgt', desc: 'Manage process of complying with new Regulation.', obj: 'Regulations', policyDoc: 'New Regulation Mgt Policies', policyStatus: 'PASSED', evidenceDoc: 'COMPLIANCE FRAMEWORK DOCUMENT', evidenceStatus: 'PASSED' },
+  { code: 'COMP_08', func: 'Compliance', name: 'Compliance Reporting', desc: 'Create compliance report for board.', obj: '14 Compliance Roles', policyDoc: 'Compliance Reporting Policies', policyStatus: 'PASSED', evidenceDoc: 'COMPLIANCE REPORT TO THE BOARD', evidenceStatus: 'PASSED' },
+  { code: 'COMP_09', func: 'Compliance', name: 'Anti-Money Laundering', desc: 'Investigating suspicious transactions.', obj: 'Events', policyDoc: 'AML Policies', policyStatus: 'PASSED', evidenceDoc: 'AML ONGOING MONITORING REPORTS', evidenceStatus: 'PASSED' },
+  { code: 'COMP_10', func: 'Compliance', name: 'Regulatory Reporting', desc: 'Manage process of completing Regulatory Reports.', obj: 'Reports', policyDoc: 'Regulatory Reporting Policies', policyStatus: 'PASSED', evidenceDoc: 'REGULATORY REPORT TRACKING', evidenceStatus: 'PASSED' },
+  { code: 'COMP_11', func: 'Compliance', name: 'Advising the Business', desc: 'Ensure employee training completed per Roles.', obj: 'Regulations', policyDoc: 'Advising Policies', policyStatus: 'PASSED', evidenceDoc: 'HIGH LEVEL TRAINING TALKS', evidenceStatus: 'PASSED' },
+  { code: 'COMP_12', func: 'Compliance', name: 'Training', desc: 'Co-ordinate Training of all employees.', obj: 'Training Courses', policyDoc: 'Training Policies', policyStatus: 'PASSED', evidenceDoc: 'TRAINING CERTIFCATE', evidenceStatus: 'PASSED' },
+  { code: 'COMP_13', func: 'Compliance', name: 'Product Training', desc: 'Co-ordinate training on new products.', obj: 'Training Courses', policyDoc: 'Training Policies', policyStatus: 'PASSED', evidenceDoc: 'CPD TRAINING LOG', evidenceStatus: 'PASSED' },
+  { code: 'COMP_14', func: 'Compliance', name: 'Regulator Comms', desc: 'List of all correspondance with Regulator.', obj: 'Comms', policyDoc: 'Regulator Comms Policies', policyStatus: 'PASSED', evidenceDoc: 'REGULATOR CORRESPONDANCE LOG', evidenceStatus: 'PASSED' },
+
+  // Sales & Marketing
+  { code: 'SAL_01', func: 'Sales and Marketing', name: 'Sales Product', desc: 'Maintain list of products and value proposition.', obj: 'Products', policyDoc: 'SALES PRODUCTS & SERVICES LIST', policyStatus: 'PASSED', evidenceDoc: 'PRODUCTS & SERVICES LIST', evidenceStatus: 'PASSED' },
+  { code: 'SAL_02', func: 'Sales and Marketing', name: 'Advertising', desc: 'Advertising Policy and example advertisment.', obj: 'Ads', policyDoc: 'ADVERTISING POLICY', policyStatus: 'PASSED', evidenceDoc: 'ADVERTISING POLICY & EXAMPLE', evidenceStatus: 'PASSED' },
+  { code: 'SAL_03', func: 'Sales and Marketing', name: 'Prospect Campaign Design', desc: 'Design marketing Campaigns.', obj: 'Campaigns', policyDoc: 'MARKETING POLICY', policyStatus: 'PASSED', evidenceDoc: 'CAMPAIGN EXAMPLE', evidenceStatus: 'PASSED' },
+  { code: 'SAL_04', func: 'Sales and Marketing', name: 'Prospect Campaign Execution', desc: 'Execute marketing campaigns.', obj: 'Campaigns', policyDoc: 'CUSTOMER EVENT PLAN', policyStatus: 'PASSED', evidenceDoc: 'CUSTOMER EVENT PLAN', evidenceStatus: 'PASSED' },
+  { code: 'SAL_05', func: 'Sales and Marketing', name: 'Lead/Opportunity Mgt', desc: 'Creation of Sales Leads.', obj: 'Leads', policyDoc: 'CLIENT SALES PIPELINE POLICY', policyStatus: 'PASSED', evidenceDoc: 'CLIENT SALES PIPELINE DOCUMENT', evidenceStatus: 'PASSED' },
+
+  // Finance
+  { code: 'FIN_01', func: 'Finance', name: 'Financial Accounting', desc: 'List of Accounts, Records and Trial balance.', obj: 'Accounts', policyDoc: 'FINANCIAL ACCOUNTING POLICY', policyStatus: 'PASSED', evidenceDoc: 'BANK ACCOUNT CASH CHECKS', evidenceStatus: 'PASSED' },
+  { code: 'FIN_02', func: 'Finance', name: 'Financial Statements', desc: 'Evidence that financial Statements created.', obj: 'Entities', policyDoc: 'FINANCIAL STATEMENT POLICY', policyStatus: 'PASSED', evidenceDoc: 'FINANCIAL STATEMENTS (AUDITED)', evidenceStatus: 'PASSED' },
+  { code: 'FIN_03', func: 'Finance', name: 'Financial Compliance', desc: 'Ensuring firm complies with Financial Obligations.', obj: 'Compliance', policyDoc: 'FINANCIAL COMPLIANCE POLICY', policyStatus: 'PASSED', evidenceDoc: 'FINANCIAL STATEMENTS (SOLVENCY)', evidenceStatus: 'PASSED' },
+  { code: 'FIN_04', func: 'Tax', name: 'Tax Administration', desc: 'Calculate and Submit Corporate Tax Return.', obj: 'Tax', policyDoc: 'TAX POLICY', policyStatus: 'PASSED', evidenceDoc: 'TAX RETURN', evidenceStatus: 'PASSED' },
+
+  // Management
+  { code: 'MGT_01', func: 'Management', name: 'Organisation Direction', desc: 'Creation of Business Plan.', obj: 'Strategy', policyDoc: 'BUSINESS PLAN CREATION', policyStatus: 'PASSED', evidenceDoc: 'BUSINESS PLAN', evidenceStatus: 'PASSED' },
+  { code: 'MGT_02', func: 'Management', name: 'Business Unit Direction', desc: 'Committees and Terms of Reference.', obj: 'Governance', policyDoc: 'COMMITTEE MANAGEMENT', policyStatus: 'PASSED', evidenceDoc: 'LIST OF COMMITTEES', evidenceStatus: 'PASSED' },
+  { code: 'MGT_03', func: 'Management', name: 'Correspondent Bank Relationships', desc: 'Maintain list of Corresponding Banks.', obj: 'Banks', policyDoc: 'COMPANY BANK ACCOUNT TERMS', policyStatus: 'PASSED', evidenceDoc: 'COMPANY BANK ACCOUNT TERMS', evidenceStatus: 'PASSED' },
+  { code: 'MGT_04', func: 'Management', name: 'Product Broker Agreement', desc: 'Maintain list of Product Producers and Agreements.', obj: 'Producers', policyDoc: 'AGREEMENT MANAGEMENT', policyStatus: 'PASSED', evidenceDoc: 'PRODUCT PRODUCER AGREEMENTS', evidenceStatus: 'PASSED' },
+  { code: 'MGT_05', func: 'Management', name: 'Contractor Supplier Agreement', desc: 'Maintain List of Suppliers and agreements.', obj: 'Suppliers', policyDoc: 'SUPPLIER CO-ORDINATION', policyStatus: 'PASSED', evidenceDoc: 'LIST OF SUPPLIERS', evidenceStatus: 'PASSED' },
+  { code: 'MGT_06', func: 'Management', name: 'Company Billing', desc: 'Execution of Billing invoices.', obj: 'Billing', policyDoc: 'BILLING POLICY', policyStatus: 'PASSED', evidenceDoc: 'EXAMPLE PAID INVOICES', evidenceStatus: 'PASSED' },
+  { code: 'MGT_07', func: 'Management', name: 'Building Maintenance', desc: 'Process for managing Buildings.', obj: 'Facilities', policyDoc: 'BUILDINGS MANAGEMENT', policyStatus: 'PASSED', evidenceDoc: 'BUILDINGS LEASE INFO', evidenceStatus: 'PASSED' },
+  { code: 'MGT_08', func: 'Management', name: 'Employee Assignment', desc: 'Assign Roles.', obj: 'HR', policyDoc: 'EMPLOYEE ASSIGNMENT', policyStatus: 'PASSED', evidenceDoc: 'MANAGEMENT RESPONSIBILITY MAP', evidenceStatus: 'PASSED' },
+  { code: 'MGT_09', func: 'Management', name: 'Payroll', desc: 'Process Payroll.', obj: 'HR', policyDoc: 'PAYROLL POLICY', policyStatus: 'PASSED', evidenceDoc: 'PAYROLL REPORT', evidenceStatus: 'PASSED' },
+  { code: 'MGT_10', func: 'Management', name: 'Archive Services', desc: 'List of Corporate Policies.', obj: 'Archive', policyDoc: 'POLICY MANAGEMENT', policyStatus: 'PASSED', evidenceDoc: 'EXAMPLE POLICY', evidenceStatus: 'PASSED' },
+  { code: 'MGT_11', func: 'Management', name: 'Management Manual', desc: 'List of Ops Processes and Procedures.', obj: 'Manuals', policyDoc: 'MANAGEMENT MANUAL', policyStatus: 'PASSED', evidenceDoc: 'EXAMPLE PROCEDURE', evidenceStatus: 'PASSED' },
+  { code: 'MGT_12', func: 'Management', name: 'Employee Data', desc: 'Employee recruitment info.', obj: 'HR', policyDoc: 'EMPLOYEE DATA MGT', policyStatus: 'PASSED', evidenceDoc: 'EMPLOYEE DATA RECORD', evidenceStatus: 'PASSED' },
+  { code: 'MGT_13', func: 'Management', name: 'Outsourcees', desc: 'List of outsourced processes.', obj: 'Outsourcing', policyDoc: 'OUTSOURCING CHECKLIST', policyStatus: 'PASSED', evidenceDoc: 'OUTSOURCING CHECKLIST', evidenceStatus: 'PASSED' },
+  { code: 'MGT_14', func: 'Management', name: 'Employee Certification', desc: 'Evidence employees are certified.', obj: 'HR', policyDoc: 'EMPLOYEE CERTIFICATE', policyStatus: 'PASSED', evidenceDoc: 'EMPLOYEE CERTIFICATE', evidenceStatus: 'PASSED' },
+  { code: 'MGT_15', func: 'Management', name: 'Employee Evaluation', desc: 'Fitness & Probity Assessments.', obj: 'HR', policyDoc: 'FITNESS & PROBITY REPORT', policyStatus: 'PASSED', evidenceDoc: 'FITNESS & PROBITY REPORT', evidenceStatus: 'PASSED' },
+  { code: 'MGT_16', func: 'Management', name: 'Legal Compliance', desc: 'Actions requiring legal review.', obj: 'Legal', policyDoc: 'LEGAL REQUIREMENTS', policyStatus: 'PASSED', evidenceDoc: 'LEGAL ACTION LOG', evidenceStatus: 'PASSED' },
+
+  // Operations
+  { code: 'OPS_01', func: 'Operations', name: 'Financial Instrument Data', desc: 'Maintain list of Products and curve/index data.', obj: 'Data', policyDoc: 'DATA MANAGEMENT PROCEDURE', policyStatus: 'PASSED', evidenceDoc: 'LIST OF PRODUCTS', evidenceStatus: 'PASSED' },
+  { code: 'OPS_02', func: 'Operations', name: 'Customer Reference Data', desc: 'Manage Customer documents.', obj: 'Data', policyDoc: 'CUSTOMER DATA MGT', policyStatus: 'PASSED', evidenceDoc: 'CLIENT TRACKING REPORT', evidenceStatus: 'PASSED' },
+  { code: 'OPS_03', func: 'Operations', name: 'Corporate Events', desc: 'Manage Corporate Events.', obj: 'Events', policyDoc: 'CORPORATE EVENTS ADMIN', policyStatus: 'PASSED', evidenceDoc: 'TRACKING REPORT', evidenceStatus: 'PASSED' },
+  { code: 'OPS_04', func: 'Operations', name: 'Valuation', desc: 'Valuation of Customer Policies.', obj: 'Valuation', policyDoc: 'VALUATION REPORTS', policyStatus: 'PASSED', evidenceDoc: 'PORTFOLIO VALUATIONS', evidenceStatus: 'PASSED' },
+  { code: 'OPS_05', func: 'Operations', name: 'Payments Execution', desc: 'Ensure Accounts seeded correctly.', obj: 'Payments', policyDoc: 'PAYMENT MGT', policyStatus: 'PASSED', evidenceDoc: 'BANK STATEMENTS', evidenceStatus: 'PASSED' },
+  { code: 'OPS_06', func: 'Operations', name: 'Customer Billing', desc: 'Ensure Commissions processed.', obj: 'Billing', policyDoc: 'CUSTOMER BILLING', policyStatus: 'PASSED', evidenceDoc: 'CUSTOMER STATEMENT', evidenceStatus: 'PASSED' },
+  { code: 'OPS_07', func: 'Operations', name: 'Customer Position', desc: 'Maintain clients overall positions.', obj: 'Position', policyDoc: 'POSITION MANAGEMENT', policyStatus: 'PASSED', evidenceDoc: 'POLICY REPORT', evidenceStatus: 'PASSED' },
+  { code: 'OPS_08', func: 'Operations', name: 'Custody Administration', desc: 'Manage Custody of Client Policies.', obj: 'Custody', policyDoc: 'CUSTODY ADMIN', policyStatus: 'PASSED', evidenceDoc: 'POLICY REPORT', evidenceStatus: 'PASSED' },
+
+  // Technology
+  { code: 'TECH_01', func: 'Technology', name: 'Systems Administration', desc: 'Tracking and Administration of systems.', obj: 'Systems', policyDoc: 'IT SYSTEMS ADMIN', policyStatus: 'PASSED', evidenceDoc: 'LIST OF IT SYSTEMS', evidenceStatus: 'PASSED' },
+  { code: 'TECH_02', func: 'Technology', name: 'Systems Operations', desc: 'Maintain all IT Systems.', obj: 'Ops', policyDoc: 'IT SYSTEMS MGT', policyStatus: 'PASSED', evidenceDoc: 'IT SYSTEMS MANUAL', evidenceStatus: 'PASSED' },
+  { code: 'TECH_03', func: 'Technology', name: 'Continuity Planning', desc: 'Business Continuity and Testing.', obj: 'BCP', policyDoc: 'BUSINESS CONTINUITY POLICY', policyStatus: 'PASSED', evidenceDoc: 'BCP REPORT', evidenceStatus: 'PASSED' },
+  { code: 'TECH_04', func: 'Technology', name: 'Archive Services', desc: 'Storage of firm/client data.', obj: 'Archive', policyDoc: 'DATA ARCHIVING POLICY', policyStatus: 'PASSED', evidenceDoc: 'DATA ARCHIVING REPORT', evidenceStatus: 'PASSED' },
+  { code: 'TECH_05', func: 'Technology', name: 'Voice Services', desc: 'List of Voice recordings.', obj: 'Voice', policyDoc: 'VOICE RECORDING POLICY', policyStatus: 'PASSED', evidenceDoc: 'VOICE RECORDING POLICY', evidenceStatus: 'PASSED' },
+];
+
 // --- UTILITIES ---
 const getRAGStatus = (percentage) => {
-  // RAG Logic: > 70 Green, 50-70 Orange, < 50 Red
   if (percentage > 70) return { color: 'bg-emerald-600', text: 'text-emerald-800', bg: 'bg-emerald-50', border: 'border-emerald-200', label: 'Compliant' };
   if (percentage >= 50) return { color: 'bg-orange-500', text: 'text-orange-800', bg: 'bg-orange-50', border: 'border-orange-200', label: 'At Risk' };
   return { color: 'bg-red-600', text: 'text-red-800', bg: 'bg-red-50', border: 'border-red-200', label: 'Critical' };
@@ -134,6 +228,150 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend }) => (
 );
 
 // --- DASHBOARD COMPONENTS ---
+
+const OperationsDetailDashboard = () => {
+  const [filter, setFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Extract unique functions for tabs
+  const functions = ['All', ...new Set(OPS_DETAIL_DATA.map(item => item.func))];
+
+  const filteredData = OPS_DETAIL_DATA.filter(item => {
+    const matchesFilter = filter === 'All' || item.func === filter;
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          item.code.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Header Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-sm">
+          <div className="text-sm text-neutral-500 font-medium">Total Processes</div>
+          <div className="text-2xl font-bold text-neutral-900">{OPS_DETAIL_DATA.length}</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-sm">
+          <div className="text-sm text-neutral-500 font-medium">Policy Documents</div>
+          <div className="text-2xl font-bold text-emerald-600">{OPS_DETAIL_DATA.filter(i => i.policyStatus === 'PASSED').length} Passed</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-sm">
+          <div className="text-sm text-neutral-500 font-medium">Evidence Documents</div>
+          <div className="text-2xl font-bold text-emerald-600">{OPS_DETAIL_DATA.filter(i => i.evidenceStatus === 'PASSED').length} Passed</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-sm">
+          <div className="text-sm text-neutral-500 font-medium">Coverage</div>
+          <div className="text-2xl font-bold text-neutral-900">100%</div>
+        </div>
+      </div>
+
+      {/* Main Table Container */}
+      <div className="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+        {/* Controls */}
+        <div className="p-6 border-b border-neutral-200 space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
+              <List className="w-5 h-5 text-red-600" />
+              Operations Detail Dashboard
+            </h2>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
+              <input 
+                type="text" 
+                placeholder="Search processes..." 
+                className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          {/* Tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {functions.map(func => (
+              <button
+                key={func}
+                onClick={() => setFilter(func)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
+                  filter === func 
+                    ? 'bg-neutral-900 text-white' 
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                }`}
+              >
+                {func}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Detailed Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[1200px]">
+            <thead>
+              <tr className="bg-neutral-50 text-neutral-600 text-[10px] uppercase tracking-wider">
+                <th className="p-4 border-b border-neutral-200 w-24">Code</th>
+                <th className="p-4 border-b border-neutral-200 w-32">Function</th>
+                <th className="p-4 border-b border-neutral-200 w-64">Process Name</th>
+                
+                {/* Policy Section */}
+                <th className="p-4 border-b border-neutral-200 bg-neutral-100/50 w-64">Policy & Procedures</th>
+                <th className="p-4 border-b border-neutral-200 bg-neutral-100/50 w-24 text-center">Status</th>
+                <th className="p-4 border-b border-neutral-200 bg-neutral-100/50 w-32 text-center">Actions</th>
+
+                {/* Evidence Section */}
+                <th className="p-4 border-b border-neutral-200 w-64">Evidence Document</th>
+                <th className="p-4 border-b border-neutral-200 w-24 text-center">Status</th>
+                <th className="p-4 border-b border-neutral-200 w-32 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {filteredData.map((row, idx) => (
+                <tr key={idx} className="hover:bg-neutral-50 transition-colors">
+                  <td className="p-4 text-[10px] font-mono text-neutral-500">{row.code}</td>
+                  <td className="p-4 text-xs font-medium text-neutral-600">{row.func}</td>
+                  <td className="p-4">
+                    <div className="text-sm font-semibold text-neutral-900">{row.name}</div>
+                    <div className="text-[10px] text-neutral-500 mt-1 line-clamp-2" title={row.desc}>{row.desc}</div>
+                  </td>
+
+                  {/* Policy Columns */}
+                  <td className="p-4 bg-neutral-50/30 text-xs text-neutral-700">{row.policyDoc}</td>
+                  <td className="p-4 bg-neutral-50/30 text-center">
+                    <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold border border-emerald-200">
+                      {row.policyStatus}
+                    </span>
+                  </td>
+                  <td className="p-4 bg-neutral-50/30 text-center">
+                    <div className="flex justify-center gap-1">
+                      <button className="p-1.5 hover:bg-neutral-200 rounded text-neutral-600" title="View"><Eye className="w-3.5 h-3.5" /></button>
+                      <button className="p-1.5 hover:bg-neutral-200 rounded text-neutral-600" title="Create"><PlusCircle className="w-3.5 h-3.5" /></button>
+                      <button className="p-1.5 hover:bg-neutral-200 rounded text-neutral-600" title="Validate"><CheckSquare className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </td>
+
+                  {/* Evidence Columns */}
+                  <td className="p-4 text-xs text-neutral-700">{row.evidenceDoc}</td>
+                  <td className="p-4 text-center">
+                    <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold border border-emerald-200">
+                      {row.evidenceStatus}
+                    </span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <div className="flex justify-center gap-1">
+                      <button className="p-1.5 hover:bg-neutral-200 rounded text-neutral-600" title="View"><Eye className="w-3.5 h-3.5" /></button>
+                      <button className="p-1.5 hover:bg-neutral-200 rounded text-neutral-600" title="Create"><PlusCircle className="w-3.5 h-3.5" /></button>
+                      <button className="p-1.5 hover:bg-neutral-200 rounded text-neutral-600" title="Validate"><CheckSquare className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const DashboardTable = ({ title, data }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -443,6 +681,10 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
+    const path = window.location.pathname;
+    if (path.includes('smpfinancial')) {
+      setActiveTab('clients');
+    }
   }, []);
 
   const renderContent = () => {
@@ -463,6 +705,7 @@ export default function App() {
       case 'operations': return <DashboardTable title="Operational Controls Framework" data={opsData} type="OPERATIONS" />;
       case 'regulations': return <DashboardTable title="Regulatory Compliance Framework" data={regData} type="REGULATION" />;
       case 'clients': return <ClientDashboardTable data={clientData} />;
+      case 'opsdetail': return <OperationsDetailDashboard />; // New Route
       default: return <SummaryDashboard opsData={opsData} regData={regData} />;
     }
   };
@@ -471,7 +714,8 @@ export default function App() {
     { id: 'summary', label: 'Executive Summary', icon: PieChart },
     { id: 'operations', label: 'Operational Controls', icon: Settings },
     { id: 'regulations', label: 'Regulatory Framework', icon: FileText },
-    { id: 'clients', label: 'Client Monitoring', icon: Users }, // New Tab
+    { id: 'opsdetail', label: 'Operations Detail', icon: List }, // New Tab
+    { id: 'clients', label: 'Client Monitoring', icon: Users },
   ];
 
   return (
